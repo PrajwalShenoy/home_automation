@@ -25,7 +25,7 @@ connection_response = """
     </head>
     <body>
         <h2>
-            Your IP address is {}
+            Your ESP8266 IP address is {}
         </h2>
     </body>
 </html>
