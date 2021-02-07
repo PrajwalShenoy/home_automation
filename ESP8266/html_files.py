@@ -8,7 +8,7 @@ cred_prompt = """
         <h2>
             Enter the UID and Password to connect to WiFi
         </h2>
-        <form action="/get">
+        <form action="/post">
             uid: <input type="text" name="uid">
             password: <input type="text" name="password">
             <input type="submit" value="Submit">

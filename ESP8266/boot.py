@@ -28,13 +28,17 @@ def connect_to_wifi():
     time.sleep(2)
     led_pin.on()
 
-def get_new_creds():
-    sta_if.disconnect()
-    print("Setting up webpage to get new credentials")
+def initialise_socket():
     addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
     soc = socket.socket()
     soc.bind(addr)
     soc.listen(5)
+    return soc, addr
+
+def get_new_creds():
+    sta_if.disconnect()
+    print("Setting up webpage to get new credentials")
+    soc, addr = initialise_socket()
     print("Listening on", addr)
     while True:
         client, addr = soc.accept()
@@ -47,9 +51,14 @@ def get_new_creds():
             pwd = request[1].split('&')[1].split('=')[1]
             write_new_creds(uid, pwd)
             connect_to_wifi()
+            ip_address = sta_if.ifconfig()[0]
+            sta_if.disconnect()
+            client, addr = soc.accept()
+            request = client.recv(1024)
             print("The UID is", uid, "and the Password is", pwd)
             client.send('HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\r\n')
-            client.send(html_files.connection_response.format(sta_if.ifconfig()[0]))
+            client.send(html_files.connection_response.format(ip_address))
+            client.close()
             return uid, pwd
         print(request)
         client.send('HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\r\n')
@@ -62,7 +71,7 @@ def check_button(pin):
     temp_power = machine.Pin(13, machine.Pin.OUT) # D7
     temp_power.value(1)
     while time.time() < start_time + 2:
-        if pin.value() == 1:
+        if pin.value() == 0:
             temp_power.value(0)
             return True
     temp_power.value(0)
@@ -91,7 +100,7 @@ def read_creds():
 
 def main():
     print("\nStarting booting sequence")
-    button = machine.Pin(4, machine.Pin.IN) # D2
+    button = machine.Pin(4, machine.Pin.IN, machine.Pin.PULL_UP) # D2
     if check_button(button):
         print("Button is pressed, getting new credentials...")
         uid, pwd = get_new_creds()
